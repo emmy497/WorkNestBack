@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    // Which JavaScript version to compile down to
+    "target": "ES2022",
+
+    // How imports work. "commonjs" = the classic Node style (require under the hood).
+    // This is the simplest setup — you can write `import x from "./x"` with no file extension.
+    "module": "commonjs",
+
+    // Where our TypeScript lives, and where the compiled JavaScript goes
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    // Turn on all the type safety. Worth it.
+    "strict": true,
+
+    // Lets us write `import express from "express"` instead of `import * as express`
+    "esModuleInterop": true,
+
+    // Don't type-check inside node_modules (much faster startup)
+    "skipLibCheck": true,
+
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"]
+}

@@ -1,0 +1,24 @@
+# Secrets — never commit these
+.env
+.env.*
+!.env.example
+
+node_modules
+dist
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Generated email previews — rebuild with: npx tsx preview-emails.ts
+email-preview
+
+# Claude Code — local settings, session state, launch configs
+.claude
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
