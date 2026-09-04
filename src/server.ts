@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import savedJobRoutes from "./routes/savedJobRoutes";
 import applicationRoutes from "./routes/applicationRoutes";
+import dashboardRoutes from "./routes/dashboardRoutes";
 
 // Load everything from the .env file into process.env.
 // This must run BEFORE we read any process.env values.
@@ -51,6 +52,9 @@ app.use("/api/saved-jobs", savedJobRoutes);
 
 // Applications — also all logged-in only
 app.use("/api/applications", applicationRoutes);
+
+// The admin dashboard — logged in AND an admin or recruiter
+app.use("/api/dashboard", dashboardRoutes);
 
 // --- Start ------------------------------------------------------------------
 // We connect to the database FIRST, and only start listening if that worked.
