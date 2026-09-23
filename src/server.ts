@@ -1,18 +1,16 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
-
 import { connectDB } from "./config/db";
 import jobRoutes from "./routes/jobRoutes";
 import authRoutes from "./routes/authRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import savedJobRoutes from "./routes/savedJobRoutes";
 import applicationRoutes from "./routes/applicationRoutes";
+import adminApplicationRoutes from "./routes/adminApplicationRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 
-// Load everything from the .env file into process.env.
-// This must run BEFORE we read any process.env values.
-dotenv.config();
+// Environment variables are loaded via `import 'dotenv/config'` above.
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,6 +50,12 @@ app.use("/api/saved-jobs", savedJobRoutes);
 
 // Applications — also all logged-in only
 app.use("/api/applications", applicationRoutes);
+
+// Reviewing applications (any candidate's) — logged in AND an admin or
+// recruiter. Kept as its own base path rather than nested under
+// /api/applications so it can never collide with the candidate-facing
+// "/:jobId" and "/job/:jobId" routes above.
+app.use("/api/admin/applications", adminApplicationRoutes);
 
 // The admin dashboard — logged in AND an admin or recruiter
 app.use("/api/dashboard", dashboardRoutes);

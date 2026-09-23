@@ -8,6 +8,7 @@ export const APPLICATION_STAGES = [
   "shortlisted",
   "interview",
   "offer",
+  "hired",
 ] as const;
 
 export type ApplicationStage = (typeof APPLICATION_STAGES)[number];
@@ -21,6 +22,15 @@ export interface IStatusChange {
   status: ApplicationStatus;
   changedAt: Date;
   note?: string;
+}
+
+// A reviewer's rating of the candidate against this role, 0-5 each.
+// 0 means "not rated yet" rather than "rated zero".
+export interface IScorecard {
+  skillsMatch: number;
+  experience: number;
+  communication: number;
+  portfolioWork: number;
 }
 
 export interface IApplication {
@@ -50,6 +60,11 @@ export interface IApplication {
   status: ApplicationStatus;
   statusHistory: IStatusChange[];
 
+  // Reviewer-only fields. Never sent back to the candidate — see
+  // toClientApplication in applicationController, which omits them.
+  scorecard: IScorecard;
+  internalNote: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +76,18 @@ const statusChangeSchema = new Schema<IStatusChange>(
     status: { type: String, required: true },
     changedAt: { type: Date, default: Date.now },
     note: String,
+  },
+  { _id: false }
+);
+
+// Same reasoning: the scorecard is always read/written as one whole object,
+// never as its own document, so it doesn't need an id either.
+const scorecardSchema = new Schema<IScorecard>(
+  {
+    skillsMatch: { type: Number, default: 0, min: 0, max: 5 },
+    experience: { type: Number, default: 0, min: 0, max: 5 },
+    communication: { type: Number, default: 0, min: 0, max: 5 },
+    portfolioWork: { type: Number, default: 0, min: 0, max: 5 },
   },
   { _id: false }
 );
@@ -104,6 +131,9 @@ const applicationSchema = new Schema<IApplication>(
       index: true,
     },
     statusHistory: { type: [statusChangeSchema], default: [] },
+
+    scorecard: { type: scorecardSchema, default: () => ({}) },
+    internalNote: { type: String, default: "", trim: true },
   },
   { timestamps: true }
 );

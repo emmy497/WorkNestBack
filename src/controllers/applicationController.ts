@@ -57,6 +57,8 @@ function statusMessageFor(status: IApplication["status"]): string {
       return "The company would like to interview you.";
     case "offer":
       return "You have an offer. Congratulations.";
+    case "hired":
+      return "You're hired. Welcome to the team.";
     case "rejected":
       return "You weren't selected for this role this time.";
   }

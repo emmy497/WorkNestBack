@@ -536,3 +536,114 @@ export async function sendApplicationEmail(options: {
     text,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Email 5 — sent every time a reviewer moves an application to a new stage.
+//
+// One function, not five — the copy just changes per status. Keeping it in
+// one place means every stage email shares the same layout and tone, and
+// adding a new status later is a one-line addition to STAGE_COPY rather than
+// a whole new function.
+// ---------------------------------------------------------------------------
+type ReviewStatus = "review" | "shortlisted" | "interview" | "offer" | "hired" | "rejected";
+
+// Every status gets the same three pieces of copy, each a function of
+// (firstName, jobTitle, companyName) so any of them can be used freely
+// without special-casing a particular status.
+type StageCopyBuilder = (firstName: string, jobTitle: string, companyName: string) => string;
+
+const STAGE_COPY: Record<
+  ReviewStatus,
+  { eyebrow: string; heading: StageCopyBuilder; intro: StageCopyBuilder; bullet: string }
+> = {
+  review: {
+    eyebrow: "Status update",
+    heading: (firstName) => `We're reading your application, ${firstName}`,
+    intro: (_firstName, jobTitle, companyName) =>
+      `A real person on our team is now reviewing your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong>.`,
+    bullet: "We'll be in touch either way — no black hole.",
+  },
+  shortlisted: {
+    eyebrow: "Good news",
+    heading: (firstName) => `You've been shortlisted, ${firstName}`,
+    intro: (_firstName, jobTitle, companyName) =>
+      `Your application for <strong>${jobTitle}</strong> has been shortlisted and passed on to <strong>${companyName}</strong>.`,
+    bullet: "The company is now reviewing your profile directly.",
+  },
+  interview: {
+    eyebrow: "Great news",
+    heading: (_firstName, _jobTitle, companyName) => `${companyName} would like to interview you`,
+    intro: (_firstName, jobTitle, companyName) =>
+      `<strong>${companyName}</strong> would like to move forward with an interview for <strong>${jobTitle}</strong>. They'll reach out with times shortly.`,
+    bullet: "Keep an eye on your inbox for scheduling details.",
+  },
+  offer: {
+    eyebrow: "Congratulations",
+    heading: (firstName) => `You have an offer, ${firstName}`,
+    intro: (_firstName, jobTitle, companyName) =>
+      `<strong>${companyName}</strong> would like to offer you the <strong>${jobTitle}</strong> role. Congratulations — this is the whole point of WorkNest.`,
+    bullet: "The company will follow up directly with next steps.",
+  },
+  hired: {
+    eyebrow: "You're hired",
+    heading: (firstName) => `Welcome to the team, ${firstName}`,
+    intro: (_firstName, jobTitle, companyName) =>
+      `You've accepted the <strong>${jobTitle}</strong> role at <strong>${companyName}</strong>. This is exactly what WorkNest is for.`,
+    bullet: "The company will be in touch with onboarding details.",
+  },
+  rejected: {
+    eyebrow: "Status update",
+    heading: (firstName) => `An update on your application, ${firstName}`,
+    intro: (_firstName, jobTitle, companyName) =>
+      `You weren't selected for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> this time.`,
+    bullet: "Your profile stays on WorkNest — new roles open every week.",
+  },
+};
+
+export async function sendApplicationStatusEmail(options: {
+  email: string;
+  name: string;
+  jobTitle: string;
+  companyName: string;
+  status: ReviewStatus;
+  note?: string;
+}) {
+  const { email, name, jobTitle, companyName, status, note } = options;
+  const firstName = name.split(" ")[0];
+  const appUrl = process.env.CLIENT_ORIGIN || "http://localhost:5190";
+
+  const copy = STAGE_COPY[status];
+  const heading = copy.heading(firstName, jobTitle, companyName);
+
+  const html = shell({
+    preheader: `${copy.eyebrow}: ${jobTitle} at ${companyName}`,
+    footerText:
+      "You're receiving this because you applied through WorkNest. Questions? Just reply to this email.",
+    body:
+      headingRows(copy.eyebrow, heading, copy.intro(firstName, jobTitle, companyName)) +
+      buttonRow(`${appUrl}/applications`, "View your application") +
+      bulletsRow([copy.bullet]) +
+      (note ? noticeRow(note) : ""),
+  });
+
+  const text = [
+    heading,
+    "",
+    copy.intro(firstName, jobTitle, companyName).replace(/<\/?strong>/g, ""),
+    "",
+    `View your application: ${appUrl}/applications`,
+    "",
+    copy.bullet,
+    note ? `\n${note}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  await send({
+    to: email,
+    name,
+    subject: `${copy.eyebrow} — ${jobTitle} at ${companyName}`,
+    html,
+    text,
+  });
+}

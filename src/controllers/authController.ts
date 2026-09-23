@@ -476,6 +476,86 @@ export async function resetPassword(req: Request, res: Response) {
 }
 
 // ===========================================================================
+// POST /api/auth/google   { accessToken }
+//
+// The frontend gets an OAuth access token straight from Google (the
+// "implicit" flow) and hands it to us. We do NOT trust it as-is — anyone
+// could send us any access token. Instead we ask Google what it's for:
+// tokeninfo tells us who it actually belongs to (aud) and which email it's
+// for, so a token minted for some other app can't be replayed against us.
+// ===========================================================================
+export async function googleAuth(req: Request, res: Response) {
+  try {
+    const { accessToken } = req.body;
+
+    if (!accessToken) {
+      return res.status(400).json({ message: "Missing Google access token" });
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+
+    if (!clientId) {
+      throw new Error("GOOGLE_CLIENT_ID is missing. Check your server/.env file.");
+    }
+
+    const tokenInfoRes = await fetch(
+      `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${encodeURIComponent(
+        accessToken
+      )}`
+    );
+
+    if (!tokenInfoRes.ok) {
+      return res.status(401).json({ message: "Invalid Google token" });
+    }
+
+    const tokenInfo = (await tokenInfoRes.json()) as {
+      aud?: string;
+      sub?: string;
+      email?: string;
+      email_verified?: string;
+      name?: string;
+    };
+
+    // This token was issued for a DIFFERENT app — never trust it.
+    if (tokenInfo.aud !== clientId) {
+      return res.status(401).json({ message: "Invalid Google token" });
+    }
+
+    if (!tokenInfo.email || tokenInfo.email_verified !== "true") {
+      return res
+        .status(401)
+        .json({ message: "Your Google email is not verified" });
+    }
+
+    const email = tokenInfo.email.toLowerCase();
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        name: tokenInfo.name || email,
+        email,
+        googleId: tokenInfo.sub,
+        isVerified: true, // Google already confirmed this email
+      });
+    } else if (!user.googleId) {
+      // An account already exists with this email (probably password-based)
+      // — link the Google identity to it instead of failing on the
+      // duplicate email.
+      user.googleId = tokenInfo.sub;
+      user.isVerified = true;
+      await user.save();
+    }
+
+    const token = createToken(String(user._id), user.role);
+
+    res.json({ token, user: toSafeUser(user) });
+  } catch (error) {
+    console.error("googleAuth failed:", error);
+    res.status(500).json({ message: "Could not sign you in with Google" });
+  }
+}
+
+// ===========================================================================
 // GET /api/auth/me
 //
 // Returns the logged-in user. The frontend calls this on page load to find

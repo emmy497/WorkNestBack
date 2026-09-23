@@ -28,14 +28,15 @@ function percentChange(now: number, before: number): number {
 }
 
 // The statuses we show, in pipeline order, with the wording the design uses.
-// "review" is stored short but reads better as "Under review".
+// "review" is stored short but reads better as "Reviewing".
 const STATUS_LABELS: Array<{ status: ApplicationStatus; label: string }> = [
   { status: "submitted", label: "Submitted" },
-  { status: "review", label: "Under review" },
+  { status: "review", label: "Reviewing" },
   { status: "shortlisted", label: "Shortlisted" },
   { status: "interview", label: "Interview" },
   { status: "offer", label: "Offer" },
-  { status: "rejected", label: "Rejected" },
+  { status: "hired", label: "Hired" },
+  { status: "rejected", label: "Not selected" },
 ];
 
 // After .populate(), these fields hold whole documents instead of ids.
@@ -135,7 +136,7 @@ export async function getOverview(_req: Request, res: Response) {
     const [
       shortlistedThisWeek,
       interviewsThisWeek,
-      offersThisMonth,
+      hiredThisMonth,
       recentApplications,
       closingJobs,
       mostAppliedRoles,
@@ -151,7 +152,7 @@ export async function getOverview(_req: Request, res: Response) {
         updatedAt: { $gte: weekAgo },
       }),
       Application.countDocuments({
-        status: "offer",
+        status: "hired",
         updatedAt: { $gte: monthAgo },
       }),
 
@@ -264,8 +265,8 @@ export async function getOverview(_req: Request, res: Response) {
           changeLabel: "this week",
         },
         placementsMade: {
-          value: currentCount("offer"),
-          change: offersThisMonth,
+          value: currentCount("hired"),
+          change: hiredThisMonth,
           changeLabel: "this month",
         },
       },

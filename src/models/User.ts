@@ -13,7 +13,8 @@ export type OtpPurpose = "verify-email" | "reset-password";
 export interface IUser {
   name: string;
   email: string;
-  password: string; // always the HASHED password, never the real one
+  password?: string; // always the HASHED password, never the real one — absent for Google-only accounts
+  googleId?: string; // set once they've signed in with Google at least once
   role: UserRole;
 
   // Set to true once they enter the code we emailed them.
@@ -67,12 +68,23 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
 
     password: {
       type: String,
-      required: true,
+      // Only required for accounts that can log in with a password.
+      // A Google-only account never sets one.
+      required: function (this: IUser) {
+        return !this.googleId;
+      },
       minlength: 6,
 
       // select: false means "don't include this field in query results
       // unless I explicitly ask for it". This makes it very hard to
       // accidentally send the password hash back to the browser.
+      select: false,
+    },
+
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // lets many users have NO googleId without violating uniqueness
       select: false,
     },
 
@@ -125,7 +137,8 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
 userSchema.pre("save", async function () {
   // Only hash when the password actually changed. Without this check,
   // updating a user's name would re-hash the already-hashed password.
-  if (!this.isModified("password")) {
+  // Google-only accounts have no password at all, so also skip then.
+  if (!this.isModified("password") || !this.password) {
     return;
   }
 
@@ -143,6 +156,11 @@ userSchema.pre("save", async function () {
 userSchema.method(
   "comparePassword",
   function (plainPassword: string): Promise<boolean> {
+    // A Google-only account has no password to check against.
+    if (!this.password) {
+      return Promise.resolve(false);
+    }
+
     return bcrypt.compare(plainPassword, this.password);
   }
 );

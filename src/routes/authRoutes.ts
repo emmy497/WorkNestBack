@@ -4,6 +4,7 @@ import {
   verifyEmail,
   resendOtp,
   login,
+  googleAuth,
   forgotPassword,
   verifyResetOtp,
   resetPassword,
@@ -21,6 +22,7 @@ router.post("/verify-email", verifyEmail); //  POST /api/auth/verify-email
 router.post("/resend-otp", resendOtp); //      POST /api/auth/resend-otp
 
 router.post("/login", login); //               POST /api/auth/login
+router.post("/google", googleAuth); //         POST /api/auth/google
 
 // Forgot password flow
 router.post("/forgot-password", forgotPassword); //   POST /api/auth/forgot-password
