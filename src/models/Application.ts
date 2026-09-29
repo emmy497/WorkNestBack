@@ -35,7 +35,10 @@ export interface IScorecard {
 
 export interface IApplication {
   job: Types.ObjectId;
-  applicant: Types.ObjectId;
+
+  // Absent for a guest application — see the note on the unique index
+  // below for why that's safe.
+  applicant?: Types.ObjectId;
 
   // A SNAPSHOT of the applicant's details at the moment they applied.
   //
@@ -100,10 +103,10 @@ const applicationSchema = new Schema<IApplication>(
       required: true,
       index: true,
     },
+    // Not required — a guest application has no account behind it at all.
     applicant: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
       index: true,
     },
 
@@ -143,7 +146,16 @@ const applicationSchema = new Schema<IApplication>(
 // A compound unique index: the COMBINATION must be unique. One person can
 // apply to many jobs and a job gets many applicants, but nobody can apply
 // to the same role twice — enforced by the database, not just our code.
-applicationSchema.index({ job: 1, applicant: 1 }, { unique: true });
+//
+// The partialFilterExpression matters: without it, every GUEST application
+// (no `applicant` at all) would count as the same "null" value, so only
+// one guest could ever apply to a given job. Scoping the constraint to
+// documents that actually HAVE an applicant fixes that — a guest has no
+// account to dedupe against anyway.
+applicationSchema.index(
+  { job: 1, applicant: 1 },
+  { unique: true, partialFilterExpression: { applicant: { $exists: true } } }
+);
 
 export const Application = model<IApplication>(
   "Application",

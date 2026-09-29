@@ -91,16 +91,22 @@ export async function createApplication(req: Request, res: Response) {
     }
 
     // Already applied? 409 means "conflict" — the request was fine, it just
-    // clashes with something that already exists.
-    const existing = await Application.findOne({
-      job: jobId,
-      applicant: req.userId,
-    });
+    // clashes with something that already exists. Only checked for a
+    // logged-in candidate — a guest has no account to check against, and
+    // leaving this unguarded would matter: Mongoose drops an `undefined`
+    // field from a query, so { job, applicant: undefined } would silently
+    // become { job } alone and match ANY existing applicant on this job.
+    if (req.userId) {
+      const existing = await Application.findOne({
+        job: jobId,
+        applicant: req.userId,
+      });
 
-    if (existing) {
-      return res
-        .status(409)
-        .json({ message: "You've already applied to this role" });
+      if (existing) {
+        return res
+          .status(409)
+          .json({ message: "You've already applied to this role" });
+      }
     }
 
     const {
@@ -130,7 +136,7 @@ export async function createApplication(req: Request, res: Response) {
 
     const application = await Application.create({
       job: jobId,
-      applicant: req.userId,
+      applicant: req.userId || undefined,
 
       fullName,
       email,

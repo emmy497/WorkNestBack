@@ -52,6 +52,39 @@ export function protect(req: Request, res: Response, next: NextFunction) {
 }
 
 // ===========================================================================
+// IDENTIFY — "who are you, IF anyone?"
+//
+// Like protect, but never blocks the request. A valid token still sets
+// req.userId/req.userRole; a missing or bad one just leaves them unset and
+// carries on — for routes a guest is allowed to hit too (applying to a job
+// without an account), but that still behave differently when someone
+// happens to be logged in.
+// ===========================================================================
+export function identify(req: Request, res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+
+  if (!header || !header.startsWith("Bearer ")) {
+    return next();
+  }
+
+  const token = header.split(" ")[1];
+
+  try {
+    const secret = process.env.JWT_SECRET as string;
+    const payload = jwt.verify(token, secret) as TokenPayload;
+
+    req.userId = payload.userId;
+    req.userRole = payload.role;
+  } catch {
+    // A bad/expired token from a logged-out-looking request just means
+    // treat them as a guest, not an error — they didn't ask to be
+    // authenticated on this route.
+  }
+
+  next();
+}
+
+// ===========================================================================
 // AUTHORIZATION — "are you ALLOWED to do this?"
 //
 // Authentication is about identity. Authorization is about permission.
