@@ -9,6 +9,7 @@ import {
   ApplicationStatus,
 } from "../models/Application";
 import { sendApplicationStatusEmail } from "../services/emailService";
+import { Notification } from "../models/Notification";
 
 // Needed so .populate() can find these models — see the note in
 // jobController about type-only imports being stripped at compile time.
@@ -16,6 +17,38 @@ import { Company } from "../models/Company";
 import { User } from "../models/User";
 void Company;
 void User;
+
+// What each real status change tells the candidate. "submitted" isn't here
+// for the same reason it isn't in the email logic below — that's the
+// moment of applying, not a status CHANGE.
+const STATUS_NOTIFICATION_COPY: Partial<
+  Record<ApplicationStatus, (jobTitle: string, companyName: string, note?: string) => { title: string; body: string }>
+> = {
+  review: (jobTitle, companyName) => ({
+    title: "Application under review",
+    body: `${companyName} is reviewing your ${jobTitle} application.`,
+  }),
+  shortlisted: (jobTitle, companyName) => ({
+    title: "You've been shortlisted",
+    body: `${companyName} is reviewing your shortlist for ${jobTitle}.`,
+  }),
+  interview: (jobTitle, companyName, note) => ({
+    title: "Interview scheduled",
+    body: note || `You've been invited to interview for ${jobTitle} at ${companyName}.`,
+  }),
+  offer: (jobTitle, companyName) => ({
+    title: "You've got an offer!",
+    body: `${companyName} has extended an offer for ${jobTitle}.`,
+  }),
+  hired: (jobTitle, companyName) => ({
+    title: "Welcome aboard!",
+    body: `You've been hired for ${jobTitle} at ${companyName}.`,
+  }),
+  rejected: (jobTitle, companyName) => ({
+    title: "Application update",
+    body: `${companyName} has closed your application for ${jobTitle}.`,
+  }),
+};
 
 // Applications created before scorecard/internalNote existed on the schema
 // don't have them in the database, and .lean() (used below) skips schema
@@ -257,6 +290,33 @@ export async function updateApplicationStatus(req: Request, res: Response) {
           error
         );
       });
+
+      // Same reasoning as the email above — this must never slow down or
+      // fail the response, so it's fire-and-forget too.
+      const buildCopy = STATUS_NOTIFICATION_COPY[status as ApplicationStatus];
+
+      if (buildCopy && populated.applicant) {
+        const { title, body } = buildCopy(
+          populated.job.title,
+          populated.job.company?.name ?? "the company",
+          note?.trim() || undefined
+        );
+
+        Notification.create({
+          user: populated.applicant._id,
+          type: "application_status",
+          status,
+          title,
+          body,
+          job: populated.job._id,
+          application: application._id,
+        }).catch((error) => {
+          console.error(
+            `Could not create a notification for ${application.email}:`,
+            error
+          );
+        });
+      }
     }
   } catch (error) {
     console.error("updateApplicationStatus failed:", error);

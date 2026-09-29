@@ -9,6 +9,7 @@ import savedJobRoutes from "./routes/savedJobRoutes";
 import applicationRoutes from "./routes/applicationRoutes";
 import adminApplicationRoutes from "./routes/adminApplicationRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
+import notificationRoutes from "./routes/notificationRoutes";
 
 // Environment variables are loaded via `import 'dotenv/config'` above.
 
@@ -59,6 +60,9 @@ app.use("/api/admin/applications", adminApplicationRoutes);
 
 // The admin dashboard — logged in AND an admin or recruiter
 app.use("/api/dashboard", dashboardRoutes);
+
+// Notifications — also all logged-in only
+app.use("/api/notifications", notificationRoutes);
 
 // --- Start ------------------------------------------------------------------
 // We connect to the database FIRST, and only start listening if that worked.
