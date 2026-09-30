@@ -79,7 +79,10 @@ export function toClientJob(job: JobWithCompany) {
 // ---------------------------------------------------------------------------
 export async function getJobs(req: Request, res: Response) {
   try {
-    const jobs = await Job.find({ status: "open" })
+    // status: "open" alone isn't enough — nothing flips a job's status to
+    // "closed" automatically once its deadline passes, so without this it
+    // would keep showing up here with closesInDays clamped to 0.
+    const jobs = await Job.find({ status: "open", closesAt: { $gte: new Date() } })
       // .populate() swaps the company id for the real company document.
       // The second argument lists the only fields we actually need.
       .populate("company", "name logoUrl")
