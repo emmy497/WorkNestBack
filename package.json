@@ -11,7 +11,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "tsx src/seed.ts",
-    "make-admin": "tsx src/makeAdmin.ts"
+    "make-admin": "tsx src/makeAdmin.ts",
+    "fix-closing-dates": "tsx src/fixClosingDates.ts"
   },
   "dependencies": {
     "@getbrevo/brevo": "^6.0.3",
