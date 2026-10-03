@@ -20,3 +20,16 @@ export const uploadCvFile = multer({
     callback(null, true);
   },
 });
+
+const ALLOWED_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+
+export const uploadLogoFile = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB — a logo, not a photo library
+  fileFilter(req, file, callback) {
+    if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
+      return callback(new Error("Only PNG, JPEG, WEBP or SVG images are allowed"));
+    }
+    callback(null, true);
+  },
+});

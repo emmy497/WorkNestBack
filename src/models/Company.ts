@@ -8,6 +8,8 @@ export interface ICompany {
   logoUrl?: string; // the "?" means this field is optional
   website?: string;
   about?: string;
+  industry?: string;
+  location?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +23,8 @@ const companySchema = new Schema<ICompany>(
     logoUrl: String,
     website: String,
     about: String,
+    industry: String,
+    location: String,
   },
   // `timestamps: true` makes Mongoose add createdAt and updatedAt automatically
   { timestamps: true }

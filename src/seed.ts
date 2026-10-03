@@ -32,13 +32,55 @@ function daysFromNow(days: number): Date {
 }
 
 const companies = [
-  { name: "Paystack", website: "https://paystack.com" },
-  { name: "PiggyVest", website: "https://piggyvest.com" },
-  { name: "Moniepoint", website: "https://moniepoint.com" },
-  { name: "Bumpa", website: "https://getbumpa.com" },
-  { name: "Kuda", website: "https://kuda.com" },
-  { name: "Cowrywise", website: "https://cowrywise.com" },
-  { name: "Flutterwave", website: "https://flutterwave.com" },
+  {
+    name: "Paystack",
+    website: "https://paystack.com",
+    industry: "Payments",
+    location: "Lagos, Nigeria",
+    about: "Modern online and offline payments for Africa.",
+  },
+  {
+    name: "PiggyVest",
+    website: "https://piggyvest.com",
+    industry: "Savings",
+    location: "Lagos, Nigeria",
+    about: "Savings and investing for everyday people.",
+  },
+  {
+    name: "Moniepoint",
+    website: "https://moniepoint.com",
+    industry: "Fintech",
+    location: "Lagos, Nigeria",
+    about: "Banking and payments for millions of Nigerian businesses.",
+  },
+  {
+    name: "Bumpa",
+    website: "https://getbumpa.com",
+    industry: "Commerce tools",
+    location: "Lagos, Nigeria",
+    about: "Tools that help small businesses sell online.",
+  },
+  {
+    name: "Kuda",
+    website: "https://kuda.com",
+    industry: "Digital banking",
+    location: "Lagos, Nigeria",
+    about: "The bank of the free — mobile-first banking.",
+  },
+  {
+    name: "Cowrywise",
+    website: "https://cowrywise.com",
+    industry: "Wealth & investing",
+    location: "Lagos, Nigeria",
+    about: "Helping people save and invest with confidence.",
+  },
+  {
+    name: "Flutterwave",
+    website: "https://flutterwave.com",
+    industry: "Payments infrastructure",
+    location: "Lagos, Nigeria",
+    about: "Payment infrastructure moving money across Africa.",
+  },
 ];
 
 // The same 8 jobs from your mock data. `companyName` is a temporary field —

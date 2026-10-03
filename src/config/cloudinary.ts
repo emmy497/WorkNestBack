@@ -11,18 +11,20 @@ cloudinary.config({
 // Cloudinary, without ever writing it to disk. Returns the public URL.
 //
 // resource_type: "raw" is what Cloudinary calls anything that isn't an image
-// or video — a PDF or a Word doc counts as "raw".
+// or video — a PDF or a Word doc counts as "raw". Defaulting to "raw" keeps
+// every existing caller (CV uploads) unchanged; a logo upload passes "image"
+// explicitly so Cloudinary actually treats it as one (transformations, etc).
 // ---------------------------------------------------------------------------
 export function uploadBufferToCloudinary(
   buffer: Buffer,
-  options: { folder: string; filename: string }
+  options: { folder: string; filename: string; resourceType?: "raw" | "image" }
 ): Promise<{ secureUrl: string }> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: options.folder,
         public_id: options.filename,
-        resource_type: "raw",
+        resource_type: options.resourceType ?? "raw",
         overwrite: true,
       },
       (error, result) => {
