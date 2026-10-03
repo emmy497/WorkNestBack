@@ -8,6 +8,8 @@ import profileRoutes from "./routes/profileRoutes";
 import savedJobRoutes from "./routes/savedJobRoutes";
 import applicationRoutes from "./routes/applicationRoutes";
 import adminApplicationRoutes from "./routes/adminApplicationRoutes";
+import adminJobRoutes from "./routes/adminJobRoutes";
+import adminCompanyRoutes from "./routes/adminCompanyRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 
@@ -57,6 +59,12 @@ app.use("/api/applications", applicationRoutes);
 // /api/applications so it can never collide with the candidate-facing
 // "/:jobId" and "/job/:jobId" routes above.
 app.use("/api/admin/applications", adminApplicationRoutes);
+
+// Managing jobs as an admin/recruiter — every status, not just "open".
+app.use("/api/admin/jobs", adminJobRoutes);
+
+// The Client dropdown on the New Role form.
+app.use("/api/admin/companies", adminCompanyRoutes);
 
 // The admin dashboard — logged in AND an admin or recruiter
 app.use("/api/dashboard", dashboardRoutes);
