@@ -122,6 +122,7 @@ export async function createApplication(req: Request, res: Response) {
       availability,
       expectedSalary,
       whyThisRole,
+      screeningAnswers,
     } = req.body;
 
     if (!fullName || !email) {
@@ -132,6 +133,25 @@ export async function createApplication(req: Request, res: Response) {
       return res
         .status(400)
         .json({ message: "Please tell us why you're interested in this role" });
+    }
+
+    // The Apply wizard builds this array directly from job.screeningQuestions,
+    // so a missing or empty answer here means the candidate skipped one —
+    // same "insist on it" treatment as whyThisRole above.
+    const answers: { question: string; answer: string }[] = Array.isArray(screeningAnswers)
+      ? screeningAnswers
+      : [];
+
+    if (job.screeningQuestions.length > 0) {
+      const hasAllAnswers =
+        answers.length === job.screeningQuestions.length &&
+        answers.every((a) => a?.answer && String(a.answer).trim());
+
+      if (!hasAllAnswers) {
+        return res
+          .status(400)
+          .json({ message: "Please answer every screening question" });
+      }
     }
 
     const application = await Application.create({
@@ -152,6 +172,10 @@ export async function createApplication(req: Request, res: Response) {
       availability: availability ?? "",
       expectedSalary: expectedSalary ?? "",
       whyThisRole: String(whyThisRole).trim(),
+      screeningAnswers: answers.map((a) => ({
+        question: String(a.question),
+        answer: String(a.answer).trim(),
+      })),
 
       status: "submitted",
       statusHistory: [{ status: "submitted", changedAt: new Date() }],

@@ -33,6 +33,15 @@ export interface IScorecard {
   portfolioWork: number;
 }
 
+// One of the job's screeningQuestions, paired with the candidate's answer.
+// The question text is copied here rather than looked up live — same
+// snapshot reasoning as fullName/email/etc below, so an answer still makes
+// sense even if the job's questions are edited or removed later.
+export interface IScreeningAnswer {
+  question: string;
+  answer: string;
+}
+
 export interface IApplication {
   job: Types.ObjectId;
 
@@ -59,6 +68,7 @@ export interface IApplication {
   availability: string;
   expectedSalary: string;
   whyThisRole: string;
+  screeningAnswers: IScreeningAnswer[];
 
   status: ApplicationStatus;
   statusHistory: IStatusChange[];
@@ -95,6 +105,15 @@ const scorecardSchema = new Schema<IScorecard>(
   { _id: false }
 );
 
+// Also just a log line, like statusChangeSchema — no id of its own needed.
+const screeningAnswerSchema = new Schema<IScreeningAnswer>(
+  {
+    question: { type: String, required: true },
+    answer: { type: String, required: true },
+  },
+  { _id: false }
+);
+
 const applicationSchema = new Schema<IApplication>(
   {
     job: {
@@ -126,6 +145,7 @@ const applicationSchema = new Schema<IApplication>(
 
     // The only free-text answer we insist on — it's what a reviewer reads first.
     whyThisRole: { type: String, required: true, trim: true },
+    screeningAnswers: { type: [screeningAnswerSchema], default: [] },
 
     status: {
       type: String,

@@ -25,6 +25,13 @@ export interface IJob {
   requirements: string[];
   skills: string[];
 
+  // What a candidate has to answer, beyond the fixed "why this role?"
+  // question every application already asks. See Application.screeningAnswers
+  // for where the candidate's answers end up.
+  screeningQuestions: string[];
+
+  numberOfPositions: number;
+
   // The four fields the filter sidebar uses
   location: string;
   workArrangement: WorkArrangement;
@@ -38,7 +45,7 @@ export interface IJob {
 
   whyThisCouldFit?: string;
   featured: boolean;
-  status: "draft" | "open" | "closed";
+  status: "draft" | "open" | "closed" | "archived";
 
   // We store the DEADLINE, not "closes in 6 days".
   // "6 days" would be wrong tomorrow — a date is always correct.
@@ -64,6 +71,8 @@ const jobSchema = new Schema<IJob>(
     responsibilities: { type: [String], default: [] },
     requirements: { type: [String], default: [] },
     skills: { type: [String], default: [] },
+    screeningQuestions: { type: [String], default: [] },
+    numberOfPositions: { type: Number, default: 1 },
 
     location: { type: String, required: true },
 
@@ -98,7 +107,7 @@ const jobSchema = new Schema<IJob>(
     featured: { type: Boolean, default: false },
     status: {
       type: String,
-      enum: ["draft", "open", "closed"],
+      enum: ["draft", "open", "closed", "archived"],
       default: "open",
       index: true,
     },

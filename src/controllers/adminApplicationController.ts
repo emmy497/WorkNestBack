@@ -133,6 +133,7 @@ function toDetail(app: PopulatedApplication) {
     availability: app.availability,
     expectedSalary: app.expectedSalary,
     whyThisRole: app.whyThisRole,
+    screeningAnswers: app.screeningAnswers ?? [],
 
     scorecard: app.scorecard ?? DEFAULT_SCORECARD,
     internalNote: app.internalNote ?? "",

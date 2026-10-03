@@ -67,6 +67,7 @@ export function toClientJob(job: JobWithCompany) {
     responsibilities: job.responsibilities,
     requirements: job.requirements,
     skills: job.skills,
+    screeningQuestions: job.screeningQuestions,
     whyThisCouldFit: job.whyThisCouldFit ?? "",
     closesInDays,
     postedDaysAgo,
