@@ -10,6 +10,7 @@ import { OTP_EXPIRY_MINUTES } from "../utils/otp";
 // ---------------------------------------------------------------------------
 let client: BrevoClient | null = null;
 
+
 function getClient(): BrevoClient {
   if (!client) {
     const apiKey = process.env.BREVO_API_KEY;
