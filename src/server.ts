@@ -10,6 +10,7 @@ import applicationRoutes from "./routes/applicationRoutes";
 import adminApplicationRoutes from "./routes/adminApplicationRoutes";
 import adminJobRoutes from "./routes/adminJobRoutes";
 import adminCompanyRoutes from "./routes/adminCompanyRoutes";
+import adminCandidateRoutes from "./routes/adminCandidateRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 
@@ -65,6 +66,9 @@ app.use("/api/admin/jobs", adminJobRoutes);
 
 // The Client dropdown on the New Role form.
 app.use("/api/admin/companies", adminCompanyRoutes);
+
+// Every registered candidate, for the admin Candidates page.
+app.use("/api/admin/candidates", adminCandidateRoutes);
 
 // The admin dashboard — logged in AND an admin or recruiter
 app.use("/api/dashboard", dashboardRoutes);

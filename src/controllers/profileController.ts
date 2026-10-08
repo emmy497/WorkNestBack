@@ -86,6 +86,7 @@ const EDITABLE_FIELDS = [
   "expectedSalaryMin",
   "expectedSalaryMax",
   "availability",
+  "openToWork",
 ] as const;
 
 // ===========================================================================

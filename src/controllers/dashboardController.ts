@@ -99,7 +99,7 @@ export async function getOverview(_req: Request, res: Response) {
     ] = await Promise.all([
       Job.countDocuments({ status: "open" }),
       User.countDocuments({ role: "candidate" }),
-      User.countDocuments({ role: "recruiter" }),
+      Company.countDocuments(),
       Application.countDocuments(),
 
       Job.countDocuments({ status: "open", createdAt: { $gte: weekAgo } }),

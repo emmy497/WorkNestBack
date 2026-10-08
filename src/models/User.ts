@@ -41,6 +41,7 @@ export interface IUser {
   expectedSalaryMin?: number;
   expectedSalaryMax?: number;
   availability?: string; // e.g. "Immediately" | "2 weeks notice" | "1 month notice"
+  openToWork: boolean; // false = employed elsewhere and not looking
 
   createdAt: Date;
   updatedAt: Date;
@@ -121,6 +122,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     expectedSalaryMin: { type: Number },
     expectedSalaryMax: { type: Number },
     availability: { type: String, trim: true },
+    openToWork: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
