@@ -27,13 +27,26 @@ export async function getCandidates(_req: Request, res: Response) {
       User.find({ role: "candidate" })
         .select("name email headline location yearsOfExperience skills availability openToWork createdAt")
         .lean(),
-      Application.aggregate<{ _id: Types.ObjectId; total: number; hired: number }>([
+      // Sorted newest first so $first picks up what the candidate typed on
+      // their most recent application.
+      Application.aggregate<{
+        _id: Types.ObjectId;
+        total: number;
+        hired: number;
+        location: string;
+        yearsOfExperience: string;
+        availability: string;
+      }>([
         { $match: { applicant: { $ne: null } } },
+        { $sort: { createdAt: -1 } },
         {
           $group: {
             _id: "$applicant",
             total: { $sum: 1 },
             hired: { $sum: { $cond: [{ $eq: ["$status", "hired"] }, 1, 0] } },
+            location: { $first: "$location" },
+            yearsOfExperience: { $first: "$yearsOfExperience" },
+            availability: { $first: "$availability" },
           },
         },
       ]),
@@ -49,16 +62,22 @@ export async function getCandidates(_req: Request, res: Response) {
           ? "employed"
           : "open";
 
+      // Most candidates apply before ever filling in their profile, so fall
+      // back to what they entered on their latest application.
+      const location = user.location || stats?.location || "";
+      const yearsOfExperience = user.yearsOfExperience || stats?.yearsOfExperience || "";
+      const availability = user.availability || stats?.availability || "";
+
       return {
         id: String(user._id),
         name: user.name,
         email: user.email,
         headline: user.headline ?? "",
-        location: user.location ?? "",
-        yearsOfExperience: user.yearsOfExperience ?? "",
-        experienceLevel: experienceLevel(user.yearsOfExperience),
+        location,
+        yearsOfExperience,
+        experienceLevel: experienceLevel(yearsOfExperience),
         skills: user.skills ?? [],
-        availability: user.availability ?? "",
+        availability,
         applications: stats?.total ?? 0,
         status,
         joinedAt: user.createdAt,

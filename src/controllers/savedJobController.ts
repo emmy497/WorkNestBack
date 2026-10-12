@@ -31,10 +31,13 @@ export async function getSavedJobs(req: Request, res: Response) {
       .lean();
 
     // A job could have been deleted since it was saved, leaving `job: null`.
-    // Filter those out rather than crashing on the next line.
+    // Filter those out rather than crashing on the next line. Closed jobs
+    // and ones past their deadline go too, same rule as getJobs.
+    const now = Date.now();
     const jobs = saved
       .map((entry) => entry.job as unknown as JobWithCompany | null)
       .filter((job): job is JobWithCompany => job !== null)
+      .filter((job) => job.status === "open" && new Date(job.closesAt).getTime() >= now)
       .map(toClientJob);
 
     res.json(jobs);

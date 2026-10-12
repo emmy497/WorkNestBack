@@ -67,7 +67,7 @@ export function toClientJob(job: JobWithCompany) {
     responsibilities: job.responsibilities,
     requirements: job.requirements,
     skills: job.skills,
-    screeningQuestions: job.screeningQuestions,
+    screeningQuestions: job.screeningQuestions ?? [], // jobs created before this field existed have none stored
     whyThisCouldFit: job.whyThisCouldFit ?? "",
     closesInDays,
     postedDaysAgo,

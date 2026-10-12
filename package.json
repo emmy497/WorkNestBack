@@ -11,6 +11,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "tsx src/seed.ts",
+    "seed-candidates": "tsx src/seedCandidates.ts",
     "make-admin": "tsx src/makeAdmin.ts",
     "fix-closing-dates": "tsx src/fixClosingDates.ts",
     "backfill-company-details": "tsx src/backfillCompanyDetails.ts"
