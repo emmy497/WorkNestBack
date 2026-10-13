@@ -3,19 +3,6 @@ import mongoose from "mongoose";
 import { connectDB } from "./config/db";
 import { Company } from "./models/Company";
 
-// ---------------------------------------------------------------------------
-// industry/location/about were added to the Company model after the original
-// seed ran, so companies already in the database have none of them — that's
-// why the Clients page cards were missing a location. Re-seeding would fix
-// it, but it wipes Job/Company entirely, orphaning any Application/SavedJob
-// that points at the current job ids.
-//
-// This script does the narrow thing instead: fill in those three fields,
-// by name, only where they're still missing — every job/application/id
-// stays untouched.
-//
-// Run with:  npm run backfill-company-details
-// ---------------------------------------------------------------------------
 const DETAILS: Record<string, { industry: string; location: string; about: string }> = {
   Paystack: {
     industry: "Payments",

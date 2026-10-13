@@ -1,13 +1,6 @@
 import { BrevoClient } from "@getbrevo/brevo";
 import { OTP_EXPIRY_MINUTES } from "../utils/otp";
 
-// ---------------------------------------------------------------------------
-// Brevo is the service that actually delivers the email.
-//
-// We create the client lazily (only when the first email is sent) instead of
-// at the top of the file. That way the server can still start up even if the
-// API key is missing — you just get an error when an email is attempted.
-// ---------------------------------------------------------------------------
 let client: BrevoClient | null = null;
 
 
@@ -25,9 +18,6 @@ function getClient(): BrevoClient {
   return client;
 }
 
-// ---------------------------------------------------------------------------
-// WorkNest brand colours, in one place so every email matches the site.
-// ---------------------------------------------------------------------------
 const COLORS = {
   purple: "#6D4AFF",
   purpleLight: "#F2EEFF",
@@ -41,26 +31,12 @@ const COLORS = {
   yellowText: "#463400",
 };
 
-// Email clients cannot load Google Fonts reliably, so we fall back to
-// system fonts that look similar to Inter.
 const FONT =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
-// ---------------------------------------------------------------------------
-// The shared email layout.
-//
-// Emails are built with <table> tags, not divs and flexbox. Outlook and other
-// old clients simply ignore modern CSS, but every client supports tables.
-// Styles must also be INLINE — <style> blocks get stripped by Gmail.
-// ---------------------------------------------------------------------------
-// The outer frame every WorkNest email shares: the page background, the
-// white card, the dark header bar, and the small grey footer.
-//
-// Each email passes its own middle section in as `body`, so we only write
-// this wrapper once.
 function shell(options: {
-  preheader: string; // the grey preview line shown in the inbox list
-  body: string; // the rows unique to this particular email
+  preheader: string;
+  body: string;
   footerText: string;
 }): string {
   const { preheader, body, footerText } = options;
@@ -115,7 +91,6 @@ function shell(options: {
 `;
 }
 
-// The heading block used at the top of every email body.
 function headingRows(eyebrow: string, heading: string, intro: string): string {
   return `
             <tr>
@@ -135,7 +110,6 @@ function headingRows(eyebrow: string, heading: string, intro: string): string {
             </tr>`;
 }
 
-// The light purple box holding the 6-digit code.
 function otpRow(otp: string): string {
   return `
             <tr>
@@ -161,7 +135,6 @@ function otpRow(otp: string): string {
             </tr>`;
 }
 
-// The soft yellow strip, used for a reassuring note.
 function noticeRow(text: string): string {
   return `
             <tr>
@@ -179,10 +152,6 @@ function noticeRow(text: string): string {
             </tr>`;
 }
 
-// A purple call-to-action button.
-//
-// Buttons in email are really just a coloured table cell with a link inside.
-// A styled <button> would be ignored by most email clients.
 function buttonRow(href: string, label: string): string {
   return `
             <tr>
@@ -201,7 +170,6 @@ function buttonRow(href: string, label: string): string {
             </tr>`;
 }
 
-// A simple list of what the user can do next.
 function bulletsRow(items: string[]): string {
   const rows = items
     .map(
@@ -233,8 +201,6 @@ function bulletsRow(items: string[]): string {
             </tr>`;
 }
 
-// A label/value summary table, e.g. "Role: Frontend Engineer".
-// Used by the application confirmation to echo back what was submitted.
 function summaryRows(rows: [string, string][]): string {
   const cells = rows
     .map(
@@ -266,7 +232,6 @@ function summaryRows(rows: [string, string][]): string {
             </tr>`;
 }
 
-// The full OTP email body — used by both the verification and reset emails.
 function otpLayout(options: {
   preheader: string;
   eyebrow: string;
@@ -286,9 +251,6 @@ function otpLayout(options: {
   });
 }
 
-// ---------------------------------------------------------------------------
-// The actual send. Everything else in this file just builds the HTML.
-// ---------------------------------------------------------------------------
 async function send(options: {
   to: string;
   name: string;
@@ -314,9 +276,6 @@ async function send(options: {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Email 1 — sent right after someone signs up.
-// ---------------------------------------------------------------------------
 export async function sendVerificationEmail(
   email: string,
   name: string,
@@ -353,9 +312,6 @@ export async function sendVerificationEmail(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Email 2 — sent when someone uses "Forgot password?".
-// ---------------------------------------------------------------------------
 export async function sendPasswordResetEmail(
   email: string,
   name: string,
@@ -392,20 +348,9 @@ export async function sendPasswordResetEmail(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Email 3 — the welcome email.
-//
-// Sent once, right after someone verifies their email address. We wait until
-// verification rather than sending it at sign-up, so that:
-//   1. They don't get two emails at the same moment (code + welcome)
-//   2. We only welcome real, confirmed people
-//
-// This one has no code in it — it has a button instead.
-// ---------------------------------------------------------------------------
 export async function sendWelcomeEmail(email: string, name: string) {
   const firstName = name.split(" ")[0];
 
-  // Where the button points. Falls back to localhost while developing.
   const appUrl = process.env.CLIENT_ORIGIN || "http://localhost:5190";
   const jobsUrl = `${appUrl}/find-jobs`;
 
@@ -453,13 +398,6 @@ export async function sendWelcomeEmail(email: string, name: string) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Email 4 — sent the moment an application is submitted.
-//
-// This is the receipt. It's the difference between "did that go through?"
-// and knowing exactly what was sent and what happens next — which is the
-// whole promise on the WorkNest homepage.
-// ---------------------------------------------------------------------------
 export async function sendApplicationEmail(options: {
   email: string;
   name: string;
@@ -480,8 +418,6 @@ export async function sendApplicationEmail(options: {
     year: "numeric",
   });
 
-  // Only include rows we actually have a value for, so the table never
-  // shows an empty field.
   const rows: [string, string][] = [
     ["Role", jobTitle],
     ["Company", companyName],
@@ -538,19 +474,8 @@ export async function sendApplicationEmail(options: {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Email 5 — sent every time a reviewer moves an application to a new stage.
-//
-// One function, not five — the copy just changes per status. Keeping it in
-// one place means every stage email shares the same layout and tone, and
-// adding a new status later is a one-line addition to STAGE_COPY rather than
-// a whole new function.
-// ---------------------------------------------------------------------------
 type ReviewStatus = "review" | "shortlisted" | "interview" | "offer" | "hired" | "rejected";
 
-// Every status gets the same three pieces of copy, each a function of
-// (firstName, jobTitle, companyName) so any of them can be used freely
-// without special-casing a particular status.
 type StageCopyBuilder = (firstName: string, jobTitle: string, companyName: string) => string;
 
 const STAGE_COPY: Record<

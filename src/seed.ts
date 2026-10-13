@@ -8,25 +8,16 @@ import { WorkArrangement, JobType, ExperienceLevel, CareerPath } from "./types/e
 
 dotenv.config();
 
-// ---------------------------------------------------------------------------
-// A seed script fills an empty database with starting data.
-// Run it with:  npm run seed
-//
-// It is SAFE to run more than once — it wipes the jobs and companies
-// collections first, so you never end up with duplicates.
-// ---------------------------------------------------------------------------
 
-// Turns "Frontend Engineer" into "frontend-engineer"
 function slugify(text: string): string {
   return text
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-]/g, "") // remove punctuation
-    .replace(/\s+/g, "-") // spaces become hyphens
-    .replace(/-+/g, "-"); // collapse repeated hyphens
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 }
 
-// Takes a number of days and returns a Date that many days in the future
 function daysFromNow(days: number): Date {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 }
@@ -83,8 +74,6 @@ const companies = [
   },
 ];
 
-// The same 8 jobs from your mock data. `companyName` is a temporary field —
-// we use it to look up the real company id below, then drop it.
 type SeedJob = {
   companyName: string;
   title: string;
@@ -336,12 +325,10 @@ async function seed() {
   try {
     await connectDB();
 
-    // Start from a clean slate so re-running never creates duplicates
     console.log("Clearing old data...");
     await Job.deleteMany({});
     await Company.deleteMany({});
 
-    // 1. Create the companies first — jobs need their ids
     console.log("Creating companies...");
     const createdCompanies = await Company.insertMany(
       companies.map((c) => ({
@@ -351,13 +338,10 @@ async function seed() {
       }))
     );
 
-    // 2. Build a lookup table: { "Paystack": ObjectId(...), ... }
-    // This saves us querying the database once per job.
     const companyIdByName = new Map(
       createdCompanies.map((c) => [c.name, c._id])
     );
 
-    // 3. Create the jobs, swapping each company NAME for its real id
     console.log("Creating jobs...");
     await Job.insertMany(
       jobs.map((job, index) => {
@@ -366,7 +350,6 @@ async function seed() {
         return {
           ...rest,
           company: companyIdByName.get(companyName),
-          // Add the index so two jobs with the same title get different slugs
           slug: `${slugify(job.title)}-${slugify(companyName)}-${index + 1}`,
           closesAt: daysFromNow(closesInDays),
           currency: "₦",
@@ -381,7 +364,6 @@ async function seed() {
   } catch (error) {
     console.error("Seeding failed:", error);
   } finally {
-    // Always close the connection, or the script hangs forever
     await mongoose.connection.close();
     process.exit(0);
   }

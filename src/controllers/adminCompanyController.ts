@@ -5,11 +5,6 @@ import { Job } from "../models/Job";
 import { Application } from "../models/Application";
 import { uploadBufferToCloudinary } from "../config/cloudinary";
 
-// ---------------------------------------------------------------------------
-// GET /api/admin/companies
-//
-// Just a name + id list, for the "Client" dropdown on the New Role form.
-// ---------------------------------------------------------------------------
 export async function getCompanies(_req: Request, res: Response) {
   try {
     const companies = await Company.find()
@@ -24,8 +19,6 @@ export async function getCompanies(_req: Request, res: Response) {
   }
 }
 
-// Turns "Moniepoint" into "moniepoint" — same idea adminJobController.ts
-// uses for job slugs, disambiguated the same way on collision.
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -83,13 +76,6 @@ function toClientShape(
   };
 }
 
-// ---------------------------------------------------------------------------
-// GET /api/admin/companies/clients
-//
-// The full Clients page — every company plus two computed stats. Neither
-// stat is stored: "open roles" comes from Job, "placements" from Application,
-// both aggregated in one query each rather than per-company lookups.
-// ---------------------------------------------------------------------------
 export async function getClients(_req: Request, res: Response) {
   try {
     const companies = await Company.find().sort({ name: 1 }).lean();
@@ -119,13 +105,6 @@ export async function getClients(_req: Request, res: Response) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// GET /api/admin/companies/clients/:id
-//
-// The Client detail page — the company itself plus every one of its jobs,
-// each with its own applicant count, and the three summary stats
-// (openRoles/totalApplicants/placements) computed across all of them.
-// ---------------------------------------------------------------------------
 export async function getClientDetail(req: Request, res: Response) {
   try {
     const id = String(req.params.id);
@@ -182,14 +161,6 @@ export async function getClientDetail(req: Request, res: Response) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// POST /api/admin/companies/clients/logo
-//
-// Standalone, rather than attached to a specific client id — the "New
-// client" modal needs somewhere to upload the logo to before the company
-// itself exists yet. Returns just the URL; the modal holds onto it and
-// sends it along with the rest of the form on submit.
-// ---------------------------------------------------------------------------
 export async function uploadClientLogo(req: Request, res: Response) {
   try {
     if (!req.file) {
@@ -209,9 +180,6 @@ export async function uploadClientLogo(req: Request, res: Response) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// POST /api/admin/companies/clients
-// ---------------------------------------------------------------------------
 export async function createClient(req: Request, res: Response) {
   try {
     const { name, industry, location, description, website, logoUrl } = req.body;
@@ -239,9 +207,6 @@ export async function createClient(req: Request, res: Response) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// PATCH /api/admin/companies/clients/:id
-// ---------------------------------------------------------------------------
 export async function updateClient(req: Request, res: Response) {
   try {
     const id = String(req.params.id);

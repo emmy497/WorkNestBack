@@ -9,16 +9,6 @@ import { Application, ApplicationStatus } from "./models/Application";
 
 dotenv.config();
 
-// ---------------------------------------------------------------------------
-// Fills the admin Candidates page with demo people.
-//
-//   npm run seed-candidates              add (or reset) the demo candidates
-//   npm run seed-candidates -- --remove  delete them and their applications
-//
-// Every demo account uses an @demo.worknest email, so they're easy to find
-// and remove. Each gets a random password nobody knows, so they can't be
-// logged into. Safe to run more than once — it clears the old demo data first.
-// ---------------------------------------------------------------------------
 
 const DEMO_DOMAIN = "@demo.worknest";
 
@@ -30,7 +20,7 @@ interface DemoCandidate {
   skills: string[];
   availability: string;
   openToWork?: boolean;
-  appliesTo?: string; // job title to apply for; omitted = no applications
+  appliesTo?: string;
   hired?: boolean;
 }
 
@@ -55,7 +45,6 @@ function demoEmail(name: string): string {
   return name.toLowerCase().replace(/[^a-z]+/g, ".") + DEMO_DOMAIN;
 }
 
-// Deletes every demo account and anything they applied for.
 async function removeDemoData() {
   const existing = await User.find({ email: { $regex: `${DEMO_DOMAIN.replace(".", "\\.")}$` } }).select("_id");
   const ids = existing.map((u) => u._id);
@@ -67,8 +56,6 @@ async function removeDemoData() {
 async function seedCandidates() {
   await removeDemoData();
 
-  // Applications point at real jobs, so look them up by title. A title that
-  // isn't in this database just means that candidate gets no application.
   const jobs = await Job.find({ status: "open" }).select("title");
   const jobByTitle = new Map(jobs.map((job) => [job.title, job._id]));
 

@@ -7,20 +7,14 @@ import { User } from "../models/User";
 import { toClientJob, JobWithCompany } from "./jobController";
 import { sendApplicationEmail } from "../services/emailService";
 
-// Needed so .populate() can find these models — see the note in
-// jobController about type-only imports being stripped at compile time.
 import { Company } from "../models/Company";
 void Company;
 
-// After .populate("job"), the job field holds a whole job document instead
-// of just its id. This type describes an application in that shape.
 type ApplicationWithJob = Omit<IApplication, "job"> & {
   _id: Types.ObjectId;
   job: JobWithCompany | null;
 };
 
-// Turn a database application into what the React app expects.
-// The frontend's Application type wants a nested `job` and an ISO date.
 function toClientApplication(app: ApplicationWithJob) {
   return {
     id: String(app._id),
@@ -29,7 +23,6 @@ function toClientApplication(app: ApplicationWithJob) {
     appliedAt: new Date(app.createdAt).toISOString(),
     statusMessage: statusMessageFor(app.status),
 
-    // What the company was sent, so the candidate can look back at it
     fullName: app.fullName,
     email: app.email,
     phone: app.phone,
@@ -44,7 +37,6 @@ function toClientApplication(app: ApplicationWithJob) {
   };
 }
 
-// A plain-English line describing where the application stands.
 function statusMessageFor(status: IApplication["status"]): string {
   switch (status) {
     case "submitted":
@@ -64,11 +56,6 @@ function statusMessageFor(status: IApplication["status"]): string {
   }
 }
 
-// ---------------------------------------------------------------------------
-// POST /api/applications/:jobId
-//
-// Submits an application. Everything in the wizard arrives in one request.
-// ---------------------------------------------------------------------------
 export async function createApplication(req: Request, res: Response) {
   try {
     const jobId = String(req.params.jobId);
@@ -83,19 +70,12 @@ export async function createApplication(req: Request, res: Response) {
       return res.status(404).json({ message: "Job not found" });
     }
 
-    // Don't accept applications for a role that has closed.
     if (job.status !== "open" || job.closesAt.getTime() < Date.now()) {
       return res
         .status(400)
         .json({ message: "This role is no longer accepting applications" });
     }
 
-    // Already applied? 409 means "conflict" — the request was fine, it just
-    // clashes with something that already exists. Only checked for a
-    // logged-in candidate — a guest has no account to check against, and
-    // leaving this unguarded would matter: Mongoose drops an `undefined`
-    // field from a query, so { job, applicant: undefined } would silently
-    // become { job } alone and match ANY existing applicant on this job.
     if (req.userId) {
       const existing = await Application.findOne({
         job: jobId,
@@ -135,9 +115,6 @@ export async function createApplication(req: Request, res: Response) {
         .json({ message: "Please tell us why you're interested in this role" });
     }
 
-    // The Apply wizard builds this array directly from job.screeningQuestions,
-    // so a missing or empty answer here means the candidate skipped one —
-    // same "insist on it" treatment as whyThisRole above.
     const answers: { question: string; answer: string }[] = Array.isArray(screeningAnswers)
       ? screeningAnswers
       : [];
@@ -181,19 +158,11 @@ export async function createApplication(req: Request, res: Response) {
       statusHistory: [{ status: "submitted", changedAt: new Date() }],
     });
 
-    // Answer the browser FIRST. The application is safely saved, so there's
-    // no reason to make the candidate watch a spinner while an email sends.
     res.status(201).json({
       message: "Application submitted",
       applicationId: String(application._id),
     });
 
-    // Now the email, after the response has already gone out.
-    //
-    // Everything about sending lives inside this helper, including the
-    // company lookup. That matters: if the lookup or the send fails, it must
-    // not turn an application that genuinely succeeded into an error. We log
-    // the problem instead — the candidate keeps their 201 either way.
     sendApplicationConfirmation(application, job).catch((error) => {
       console.error(
         `Could not send application email to ${application.email}:`,
@@ -203,26 +172,16 @@ export async function createApplication(req: Request, res: Response) {
   } catch (error) {
     console.error("createApplication failed:", error);
 
-    // We send the 201 before the email now, so by the time something goes
-    // wrong here a reply may already be on its way. Trying to send a second
-    // one crashes with "Cannot set headers after they are sent".
     if (!res.headersSent) {
       res.status(500).json({ message: "Could not submit your application" });
     }
   }
 }
 
-// Builds and sends the "we got your application" email.
-//
-// Kept separate from the controller because it runs AFTER the response has
-// been sent, and nothing in here is allowed to affect what the candidate
-// already saw.
 async function sendApplicationConfirmation(
   application: IApplication,
   job: IJob
 ) {
-  // We need the company NAME, but job.company is only an id — so fetch just
-  // that one field rather than pulling down the whole document.
   const company = await Company.findById(job.company).select("name").lean();
 
   await sendApplicationEmail({
@@ -235,11 +194,6 @@ async function sendApplicationConfirmation(
   });
 }
 
-// ---------------------------------------------------------------------------
-// GET /api/applications
-//
-// The logged-in user's applications, newest first.
-// ---------------------------------------------------------------------------
 export async function getMyApplications(req: Request, res: Response) {
   try {
     const applications = await Application.find({ applicant: req.userId })
@@ -250,8 +204,6 @@ export async function getMyApplications(req: Request, res: Response) {
       .sort({ createdAt: -1 })
       .lean<ApplicationWithJob[]>();
 
-    // Skip any whose job has since been deleted, rather than sending nulls
-    // the frontend would have to guard against.
     res.json(
       applications.filter((app) => app.job !== null).map(toClientApplication)
     );
@@ -261,12 +213,6 @@ export async function getMyApplications(req: Request, res: Response) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// GET /api/applications/job/:jobId
-//
-// Has the user already applied to this job? The Apply page calls this so it
-// can stop someone filling in the whole wizard only to be rejected at the end.
-// ---------------------------------------------------------------------------
 export async function getApplicationForJob(req: Request, res: Response) {
   try {
     const jobId = String(req.params.jobId);
@@ -290,12 +236,6 @@ export async function getApplicationForJob(req: Request, res: Response) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// GET /api/applications/prefill
-//
-// The profile fields the wizard uses to fill itself in, so the candidate
-// doesn't retype what we already know. "Set it up once."
-// ---------------------------------------------------------------------------
 export async function getApplicationPrefill(req: Request, res: Response) {
   try {
     const user = await User.findById(req.userId).lean();

@@ -13,9 +13,6 @@ import { protect, authorize } from "../middleware/auth";
 
 const router = Router();
 
-// Same wrapper idea as profileRoutes.ts's handleCvUpload — turns a bad
-// upload (wrong type, too large) into a normal { message } JSON 400 instead
-// of an unhandled exception.
 function handleLogoUpload(req: Request, res: Response, next: NextFunction) {
   uploadLogoFile.single("logo")(req, res, (error: unknown) => {
     if (error instanceof multer.MulterError) {
@@ -31,17 +28,17 @@ function handleLogoUpload(req: Request, res: Response, next: NextFunction) {
   });
 }
 
-router.get("/", protect, authorize("admin", "recruiter"), getCompanies); // GET /api/admin/companies
-router.get("/clients", protect, authorize("admin", "recruiter"), getClients); // GET /api/admin/companies/clients
-router.get("/clients/:id", protect, authorize("admin", "recruiter"), getClientDetail); // GET /api/admin/companies/clients/:id
-router.post("/clients", protect, authorize("admin", "recruiter"), createClient); // POST /api/admin/companies/clients
-router.patch("/clients/:id", protect, authorize("admin", "recruiter"), updateClient); // PATCH /api/admin/companies/clients/:id
+router.get("/", protect, authorize("admin", "recruiter"), getCompanies);
+router.get("/clients", protect, authorize("admin", "recruiter"), getClients);
+router.get("/clients/:id", protect, authorize("admin", "recruiter"), getClientDetail);
+router.post("/clients", protect, authorize("admin", "recruiter"), createClient);
+router.patch("/clients/:id", protect, authorize("admin", "recruiter"), updateClient);
 router.post(
   "/clients/logo",
   protect,
   authorize("admin", "recruiter"),
   handleLogoUpload,
   uploadClientLogo
-); // POST /api/admin/companies/clients/logo
+);
 
 export default router;

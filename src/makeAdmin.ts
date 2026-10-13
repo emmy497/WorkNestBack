@@ -5,15 +5,6 @@ import mongoose from "mongoose";
 import { connectDB } from "./config/db";
 import { User } from "./models/User";
 
-// ---------------------------------------------------------------------------
-// Promotes an existing account to admin, so it can open /dashboard.
-//
-// Run it with the email of the account you want to promote:
-//
-//   npm run make-admin -- you@example.com
-//
-// With no email, it just lists the accounts that exist so you can pick one.
-// ---------------------------------------------------------------------------
 async function run() {
   await connectDB();
 
@@ -37,8 +28,6 @@ async function run() {
     return;
   }
 
-  // isVerified too: an unverified account can't log in, so promoting it
-  // without that would leave you locked out of the dashboard anyway.
   const result = await User.updateOne(
     { email },
     { $set: { role: "admin", isVerified: true } }

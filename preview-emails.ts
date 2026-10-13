@@ -1,5 +1,3 @@
-// Renders the three emails to HTML files so you can open them in a browser.
-// Run with: npx tsx preview-emails.ts
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -8,8 +6,6 @@ import path from "path";
 
 const captured: Array<{ subject: string; html: string }> = [];
 
-// Brevo's SDK sends with fetch under the hood. We replace fetch so nothing
-// leaves the machine — we just grab the HTML and pretend it worked.
 const realFetch = globalThis.fetch;
 globalThis.fetch = (async (url: any, init: any) => {
   if (String(url).includes("brevo.com")) {

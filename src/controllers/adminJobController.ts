@@ -10,8 +10,6 @@ import {
   CAREER_PATHS,
 } from "../types/enums";
 
-// Needed so .populate() can find this model — see the note in jobController
-// about type-only imports being stripped at compile time.
 import { Company } from "../models/Company";
 void Company;
 
@@ -20,16 +18,6 @@ type PopulatedJob = Omit<IJob, "company"> & {
   company: { _id: Types.ObjectId; name: string } | null;
 };
 
-// ---------------------------------------------------------------------------
-// GET /api/admin/jobs
-//
-// Every job, regardless of status — unlike the public getJobs in
-// jobController.ts, which only ever shows "open" ones. Admins need to see
-// drafts, closed and archived roles too, which is why this doesn't just
-// reuse that function or its toClientJob shaping (that one also computes
-// candidate-facing fields like closesInDays this table doesn't use, and
-// never exposes the raw status at all).
-// ---------------------------------------------------------------------------
 export async function getAdminJobs(_req: Request, res: Response) {
   try {
     const [jobs, applicantCounts] = await Promise.all([
@@ -38,8 +26,6 @@ export async function getAdminJobs(_req: Request, res: Response) {
         .sort({ createdAt: -1 })
         .lean<PopulatedJob[]>(),
 
-      // One aggregate for every job's applicant count, rather than one
-      // query per row — same idiom dashboardController.ts uses.
       Application.aggregate<{ _id: Types.ObjectId; count: number }>([
         { $group: { _id: "$job", count: { $sum: 1 } } },
       ]),
@@ -66,9 +52,6 @@ export async function getAdminJobs(_req: Request, res: Response) {
   }
 }
 
-// Turns "Frontend Engineer" into "frontend-engineer" — same idea seed.ts
-// uses, but exported from nowhere shared since this is the only other place
-// a slug ever gets generated.
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -78,9 +61,6 @@ function slugify(text: string): string {
     .replace(/-+/g, "-");
 }
 
-// Unlike seed.ts (which runs once against an empty collection), admin-created
-// titles can collide — two "Frontend Engineer" postings, say — so the base
-// slug gets a numeric suffix appended until it's actually free.
 async function uniqueSlug(title: string): Promise<string> {
   const base = slugify(title);
   let candidate = base;
@@ -98,13 +78,6 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-// ---------------------------------------------------------------------------
-// POST /api/admin/jobs
-//
-// Creates a job as either a draft or published, depending on `action`.
-// Both buttons on the New Role form submit the exact same payload — only
-// the resulting status differs.
-// ---------------------------------------------------------------------------
 export async function createJob(req: Request, res: Response) {
   try {
     const {

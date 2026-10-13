@@ -2,9 +2,6 @@ import { Request, Response } from "express";
 import { User } from "../models/User";
 import { uploadBufferToCloudinary } from "../config/cloudinary";
 
-// A small helper so we never accidentally send the password or OTP fields
-// back — same idea as toSafeUser in authController, just with every profile
-// field included too.
 function toProfileResponse(user: {
   _id: unknown;
   name: string;
@@ -49,11 +46,6 @@ function toProfileResponse(user: {
   };
 }
 
-// ===========================================================================
-// GET /api/profile/me
-//
-// Runs after `protect`, which is what sets req.userId.
-// ===========================================================================
 export async function getMyProfile(req: Request, res: Response) {
   try {
     const user = await User.findById(req.userId);
@@ -69,9 +61,6 @@ export async function getMyProfile(req: Request, res: Response) {
   }
 }
 
-// Fields the candidate is allowed to set themselves. Deliberately a
-// whitelist — role, email, isVerified etc. can NEVER be changed through
-// this endpoint, no matter what the request body contains.
 const EDITABLE_FIELDS = [
   "name",
   "headline",
@@ -89,13 +78,6 @@ const EDITABLE_FIELDS = [
   "openToWork",
 ] as const;
 
-// ===========================================================================
-// PATCH /api/profile/me   { ...any of EDITABLE_FIELDS }
-//
-// Partial update — only the fields present in the body are touched. This
-// is what lets the frontend save section-by-section instead of forcing one
-// giant "save everything at once" button.
-// ===========================================================================
 export async function updateMyProfile(req: Request, res: Response) {
   try {
     const updates: Record<string, unknown> = {};
@@ -127,7 +109,7 @@ export async function updateMyProfile(req: Request, res: Response) {
     }
 
     const user = await User.findByIdAndUpdate(req.userId, { $set: updates }, {
-      new: true, // return the document AFTER the update, not before
+      new: true,
       runValidators: true,
     });
 
@@ -142,12 +124,6 @@ export async function updateMyProfile(req: Request, res: Response) {
   }
 }
 
-// ===========================================================================
-// POST /api/profile/me/cv   (multipart/form-data, field name "cv")
-//
-// `uploadCvFile.single("cv")` middleware runs first and puts the file on
-// req.file — see middleware/upload.ts.
-// ===========================================================================
 export async function uploadCv(req: Request, res: Response) {
   try {
     if (!req.file) {

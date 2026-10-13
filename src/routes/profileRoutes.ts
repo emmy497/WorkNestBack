@@ -6,16 +6,11 @@ import { protect } from "../middleware/auth";
 
 const router = Router();
 
-// Every route here requires being logged in — there is no "view a stranger's
-// profile" endpoint (that would be a job for a separate, recruiter-only
-// route later, with its own authorization rules).
 router.use(protect);
 
-router.get("/me", getMyProfile); //           GET   /api/profile/me
-router.patch("/me", updateMyProfile); //       PATCH /api/profile/me
+router.get("/me", getMyProfile);
+router.patch("/me", updateMyProfile);
 
-// A small wrapper so a bad upload (wrong file type, too large) comes back
-// as a normal { message } JSON error instead of an unhandled exception.
 function handleCvUpload(req: Request, res: Response, next: NextFunction) {
   uploadCvFile.single("cv")(req, res, (error: unknown) => {
     if (error instanceof multer.MulterError) {
@@ -31,6 +26,6 @@ function handleCvUpload(req: Request, res: Response, next: NextFunction) {
   });
 }
 
-router.post("/me/cv", handleCvUpload, uploadCv); // POST /api/profile/me/cv
+router.post("/me/cv", handleCvUpload, uploadCv);
 
 export default router;

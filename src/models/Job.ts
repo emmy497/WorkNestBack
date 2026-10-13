@@ -10,29 +10,21 @@ import {
   CareerPath,
 } from "../types/enums";
 
-// The shape of a job as it is stored in the database.
 export interface IJob {
-  // This is a REFERENCE to a document in the companies collection.
-  // We store only its id here, not the whole company.
   company: Types.ObjectId;
 
   title: string;
   slug: string;
   description: string;
 
-  // Arrays of plain strings, stored right inside the job document
   responsibilities: string[];
   requirements: string[];
   skills: string[];
 
-  // What a candidate has to answer, beyond the fixed "why this role?"
-  // question every application already asks. See Application.screeningAnswers
-  // for where the candidate's answers end up.
   screeningQuestions: string[];
 
   numberOfPositions: number;
 
-  // The four fields the filter sidebar uses
   location: string;
   workArrangement: WorkArrangement;
   jobType: JobType;
@@ -47,8 +39,6 @@ export interface IJob {
   featured: boolean;
   status: "draft" | "open" | "closed" | "archived";
 
-  // We store the DEADLINE, not "closes in 6 days".
-  // "6 days" would be wrong tomorrow — a date is always correct.
   closesAt: Date;
 
   createdAt: Date;
@@ -59,7 +49,7 @@ const jobSchema = new Schema<IJob>(
   {
     company: {
       type: Schema.Types.ObjectId,
-      ref: "Company", // tells Mongoose which model this id points at
+      ref: "Company",
       required: true,
       index: true,
     },
@@ -76,9 +66,6 @@ const jobSchema = new Schema<IJob>(
 
     location: { type: String, required: true },
 
-    // `enum` means: only these exact values are allowed.
-    // We pass in the same arrays we used to build the TypeScript types,
-    // so the database rules and the types can never drift apart.
     workArrangement: {
       type: String,
       enum: WORK_ARRANGEMENTS,
@@ -116,8 +103,6 @@ const jobSchema = new Schema<IJob>(
   { timestamps: true }
 );
 
-// An index makes searching fast. Without one, MongoDB reads EVERY job
-// to answer a query. This one covers our most common lookup.
 jobSchema.index({ status: 1, createdAt: -1 });
 
 export const Job = model<IJob>("Job", jobSchema);

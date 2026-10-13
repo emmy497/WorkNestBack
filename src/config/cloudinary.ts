@@ -6,15 +6,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ---------------------------------------------------------------------------
-// Uploads a file buffer (as multer gives it to us in memory) straight to
-// Cloudinary, without ever writing it to disk. Returns the public URL.
-//
-// resource_type: "raw" is what Cloudinary calls anything that isn't an image
-// or video — a PDF or a Word doc counts as "raw". Defaulting to "raw" keeps
-// every existing caller (CV uploads) unchanged; a logo upload passes "image"
-// explicitly so Cloudinary actually treats it as one (transformations, etc).
-// ---------------------------------------------------------------------------
 export function uploadBufferToCloudinary(
   buffer: Buffer,
   options: { folder: string; filename: string; resourceType?: "raw" | "image" }

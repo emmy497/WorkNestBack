@@ -4,6 +4,6 @@ import { protect, authorize } from "../middleware/auth";
 
 const router = Router();
 
-router.get("/", protect, authorize("admin", "recruiter"), getCandidates); // GET /api/admin/candidates
+router.get("/", protect, authorize("admin", "recruiter"), getCandidates);
 
 export default router;

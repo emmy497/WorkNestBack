@@ -5,8 +5,6 @@ import { Application } from "../models/Application";
 
 type CandidateStatus = "open" | "placed" | "employed";
 
-// Profiles store a range ("3-5 years"); the admin table groups those into
-// the same three levels jobs use.
 function experienceLevel(yearsOfExperience?: string): string {
   if (!yearsOfExperience) return "";
   if (yearsOfExperience.startsWith("0-1") || yearsOfExperience.startsWith("1-3")) return "Junior";
@@ -14,21 +12,12 @@ function experienceLevel(yearsOfExperience?: string): string {
   return "Senior";
 }
 
-// ---------------------------------------------------------------------------
-// GET /api/admin/candidates
-//
-// Every registered candidate plus two computed fields. "Placed" wins over
-// everything — if WorkNest hired them, that's what the admin wants to see.
-// Otherwise the candidate's own openToWork flag decides.
-// ---------------------------------------------------------------------------
 export async function getCandidates(_req: Request, res: Response) {
   try {
     const [users, applicationsAgg] = await Promise.all([
       User.find({ role: "candidate" })
         .select("name email headline location yearsOfExperience skills availability openToWork createdAt")
         .lean(),
-      // Sorted newest first so $first picks up what the candidate typed on
-      // their most recent application.
       Application.aggregate<{
         _id: Types.ObjectId;
         total: number;
@@ -62,8 +51,6 @@ export async function getCandidates(_req: Request, res: Response) {
           ? "employed"
           : "open";
 
-      // Most candidates apply before ever filling in their profile, so fall
-      // back to what they entered on their latest application.
       const location = user.location || stats?.location || "";
       const yearsOfExperience = user.yearsOfExperience || stats?.yearsOfExperience || "";
       const availability = user.availability || stats?.availability || "";

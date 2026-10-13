@@ -6,8 +6,6 @@ import { SavedJob } from "../models/SavedJob";
 import { Job, IJob } from "../models/Job";
 import { User } from "../models/User";
 
-// Needed so .populate() can find this model — see the same note in
-// jobController about type-only imports being stripped at compile time.
 import { Company } from "../models/Company";
 void Company;
 
@@ -20,12 +18,6 @@ const CLOSING_SOON_WINDOW_DAYS = 3;
 const JOB_MATCH_LOOKBACK_DAYS = 14;
 const JOB_MATCH_LIMIT = 5;
 
-// ---------------------------------------------------------------------------
-// There's no cron job in this app, so "closing soon" and "job match"
-// notifications don't get created the moment they become true — they get
-// created (once each, thanks to the dedupeKey unique index) the next time
-// this candidate asks for their notifications at all.
-// ---------------------------------------------------------------------------
 async function generateClosingSoonNotifications(userId: string) {
   const now = Date.now();
   const windowEnd = new Date(now + CLOSING_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000);
@@ -99,15 +91,10 @@ async function generateJobMatchNotifications(userId: string) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// GET /api/notifications
-// ---------------------------------------------------------------------------
 export async function getNotifications(req: Request, res: Response) {
   try {
     const userId = req.userId as string;
 
-    // Best-effort — a hiccup generating lazy notifications shouldn't stop
-    // the candidate from seeing the ones that already exist.
     await Promise.all([
       generateClosingSoonNotifications(userId).catch((error) =>
         console.error("generateClosingSoonNotifications failed:", error)
@@ -143,9 +130,6 @@ export async function getNotifications(req: Request, res: Response) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// PATCH /api/notifications/:id/read
-// ---------------------------------------------------------------------------
 export async function markNotificationRead(req: Request, res: Response) {
   try {
     const id = String(req.params.id);
@@ -154,8 +138,6 @@ export async function markNotificationRead(req: Request, res: Response) {
       return res.status(400).json({ message: "That notification id is not valid" });
     }
 
-    // Matching on BOTH id and user means nobody can mark someone else's
-    // notification as read by guessing an id.
     await Notification.updateOne(
       { _id: id, user: req.userId },
       { $set: { isRead: true } }
@@ -168,9 +150,6 @@ export async function markNotificationRead(req: Request, res: Response) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// PATCH /api/notifications/read-all
-// ---------------------------------------------------------------------------
 export async function markAllNotificationsRead(req: Request, res: Response) {
   try {
     await Notification.updateMany(
