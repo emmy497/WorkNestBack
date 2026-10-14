@@ -6,6 +6,7 @@ import { Job, IJob } from "../models/Job";
 import { User } from "../models/User";
 import { toClientJob, JobWithCompany } from "./jobController";
 import { sendApplicationEmail } from "../services/emailService";
+import { uploadBufferToCloudinary } from "../config/cloudinary";
 
 import { Company } from "../models/Company";
 void Company;
@@ -259,5 +260,23 @@ export async function getApplicationPrefill(req: Request, res: Response) {
   } catch (error) {
     console.error("getApplicationPrefill failed:", error);
     res.status(500).json({ message: "Could not load your details" });
+  }
+}
+
+export async function uploadApplicationCv(req: Request, res: Response) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file was uploaded" });
+    }
+
+    const { secureUrl } = await uploadBufferToCloudinary(req.file.buffer, {
+      folder: "worknest/cvs",
+      filename: `${req.userId ?? "guest"}-${Date.now()}`,
+    });
+
+    res.status(201).json({ cvUrl: secureUrl, cvOriginalName: req.file.originalname });
+  } catch (error) {
+    console.error("uploadApplicationCv failed:", error);
+    res.status(500).json({ message: "Could not upload your CV" });
   }
 }

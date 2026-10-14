@@ -1,3 +1,4 @@
+import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 
 const ALLOWED_MIME_TYPES = [
@@ -31,3 +32,18 @@ export const uploadLogoFile = multer({
     callback(null, true);
   },
 });
+
+export function handleCvUpload(req: Request, res: Response, next: NextFunction) {
+  uploadCvFile.single("cv")(req, res, (error: unknown) => {
+    if (error instanceof multer.MulterError) {
+      if (error.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({ message: "That file is too large — 5MB max" });
+      }
+      return res.status(400).json({ message: error.message });
+    }
+    if (error) {
+      return res.status(400).json({ message: (error as Error).message });
+    }
+    next();
+  });
+}
